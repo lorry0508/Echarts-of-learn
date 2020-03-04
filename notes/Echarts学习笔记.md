@@ -493,3 +493,74 @@ option = {
 现在支持三个属性：width、height、aspectRatio（长宽比）。每个属性都可以加上 min 或 max 前缀。比如，minWidth: 200 表示『大于等于200px宽度』。两个属性一起写表示『并且』，比如：{minWidth: 200, maxHeight: 300} 表示『大于等于200px宽度，并且小于等于300px高度』。
 
 ##### 2.option
+
+media中的 option 既然是『原子 option』，理论上可以写任何 option 的配置项。但是一般我们只写跟布局定位相关的，例如截取上面例子中的一部分 query option：
+
+```js
+media: [
+    ...,
+    {
+        query: {
+            maxAspectRatio: 1           // 当长宽比小于1时。
+        },
+        option: {
+            legend: {                   // legend 放在底部中间。
+                right: 'center',
+                bottom: 0,
+                orient: 'horizontal'    // legend 横向布局。
+            },
+            series: [                   // 两个饼图左右布局。
+                {
+                    radius: [20, '50%'],
+                    center: ['50%', '30%']
+                },
+                {
+                    radius: [30, '50%'],
+                    center: ['50%', '70%']
+                }
+            ]
+        }
+    },
+    {
+        query: {
+            maxWidth: 500               // 当容器宽度小于 500 时。
+        },
+        option: {
+            legend: {
+                right: 10,              // legend 放置在右侧中间。
+                top: '15%',
+                orient: 'vertical'      // 纵向布局。
+            },
+            series: [                   // 两个饼图上下布局。
+                {
+                    radius: [20, '50%'],
+                    center: ['50%', '30%']
+                },
+                {
+                    radius: [30, '50%'],
+                    center: ['50%', '75%']
+                }
+            ]
+        }
+    },
+    ...
+]
+```
+
+##### 3.多个 query 被满足时的优先级
+
+注意，可以有多个 query 同时被满足，会都被 mergeOption，定义在后的后被 merge（即优先级更高）。
+
+##### 4.默认 query
+
+如果 media 中有某项不写 query，则表示『默认值』，即所有规则都不满足时，采纳这个option。
+
+##### 5.容器大小实时变化时的注意事项
+
+在不少情况下，并不需要容器DOM节点任意随着拖拽变化大小，而是只是根据不同终端设置几个典型尺寸。
+
+但是如果容器DOM节点需要能任意随着拖拽变化大小，那么目前使用时需要注意这件事：某个配置项，如果在某一个 query option 中出现，那么在其他 query option 中也必须出现，否则不能够回归到原来的状态。（left/right/top/bottom/width/height 不受这个限制。）
+
+##### 6.『复合 option』 中的 media 不支持 merge
+
+也就是说，当第二（或三、四、五 ...）次 chart.setOption(rawOption) 时，如果 rawOption 是 复合option（即包含 media 列表），那么新的 rawOption.media 列表不会和老的 media 列表进行 merge，而是简单替代。当然，rawOption.baseOption 仍然会正常和老的 option 进行merge。 其实，很少有场景需要使用『复合 option』来多次 setOption，而我们推荐的做法是，使用 mediaQuery 时，第一次setOption使用『复合 option』，后面 setOption 时仅使用 『原子 option』，也就是仅仅用 setOption 来改变 baseOption。
